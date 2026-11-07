@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: fitness-mcp
+  ai:
+    mcp:
+      server:
+        name: ${spring.application.name}
+        protocol: stateless
+        capabilities:
+          completion: false
+          resource: false
+          prompt: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: https://auth.razornd.ru
