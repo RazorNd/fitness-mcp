@@ -1,0 +1,29 @@
+/*
+ * Copyright 2026 Daniil <RazorNd> Razorenov
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ru.razornd.ai.fitnessmcp
+
+import org.springframework.ai.mcp.annotation.context.McpSyncRequestContext
+
+const val USER_NAME_CONTEXT_KEY = "user_name"
+
+val McpSyncRequestContext.userName: String
+    get() = checkNotNull(transportContext().get(USER_NAME_CONTEXT_KEY) as? String) {
+        "The MCP request context does not contain '$USER_NAME_CONTEXT_KEY'. " +
+                "Authenticated user names are added by ServerTransportConfiguration for every request. " +
+                "Verify that the stateless MCP transport uses the configured context extractor and that " +
+                "the request passed OAuth2 resource-server authentication."
+    }
