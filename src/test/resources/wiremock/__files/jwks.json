@@ -1,0 +1,12 @@
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "use": "sig",
+      "alg": "RS256",
+      "kid": "fitness-test-key",
+      "n": "1wKJsGYv9TW7NUdJdfrvTbGKuKA4Y18MTOAAwG76WB7XIIo7r8DsF9Bia6l7AJ_mkt9o43yFTmaTkGkbcxeAX0dbX75qvGjfCMvU--8U796ZLoKzJwrOog0w4GfO0Uhre5JKY1C3rUXxKkvW_1SzE9T_dsHbCnlHd6-qJTKRK-qZQA3O6kdfB9vI1RKA-GxosJPD_hHOOAQjijJkfYGyRmnR1KR-61j4L1qCa3JQsmdguDkxGdDfgq8uT4ML-EFomJ5wcz9rEuBijzkYRxI0tLJPfFDEHNNkoszoWB-nAQGuuC0Q_GTVKYatm7T8rKsWqfVkwNa4YwSt532MdewB1w",
+      "e": "AQAB"
+    }
+  ]
+}

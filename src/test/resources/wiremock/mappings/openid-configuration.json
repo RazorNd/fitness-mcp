@@ -1,0 +1,14 @@
+{
+  "request": {
+    "method": "GET",
+    "url": "/issuer/.well-known/openid-configuration"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "bodyFileName": "openid-configuration.json",
+    "transformers": ["response-template"]
+  }
+}
