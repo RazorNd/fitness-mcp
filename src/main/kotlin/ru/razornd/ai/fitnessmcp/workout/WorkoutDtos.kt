@@ -37,8 +37,7 @@ data class WorkoutExerciseInput(
     val instructions: String? = null,
     @JsonPropertyDescription("Planned sets in their execution order.")
     @NotEmpty
-    @Valid
-    val sets: List<WorkoutSetInput>,
+    val sets: List<@Valid WorkoutSetInput>,
 )
 
 @JsonClassDescription("A planned set and, when present, its recorded actual result.")
@@ -74,11 +73,9 @@ data class ChangeExerciseInput(
     val exerciseId: UUID,
     @JsonPropertyDescription("Full replacement target values for existing sets. Null target fields clear their current values.")
     @NonRepeated
-    @Valid
-    val setTargets: List<SetTargetUpdate>? = null,
+    val setTargets: List<@Valid SetTargetUpdate>? = null,
     @JsonPropertyDescription("New sets appended to this exercise, in the order supplied.")
-    @Valid
-    val addSets: List<WorkoutSetInput>? = null,
+    val addSets: List<@Valid WorkoutSetInput>? = null,
     @JsonPropertyDescription("Zero-based indexes of planned sets to remove. Sets with recorded results cannot be removed.")
     @NonNegativeIndexes
     val removeSets: List<Int>? = null,

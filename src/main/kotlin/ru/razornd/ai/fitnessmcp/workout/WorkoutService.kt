@@ -37,7 +37,7 @@ class WorkoutService(private val workoutRepository: WorkoutRepository) {
         @NotBlank userName: String,
         date: LocalDate?,
         description: String?,
-        @NotEmpty @Valid exercises: List<@Valid WorkoutExerciseInput>,
+        @NotEmpty exercises: List<@Valid WorkoutExerciseInput>,
     ): WorkoutDto {
         val workout = Workout(userName = userName, date = date ?: LocalDate.now(), description = description)
         exercises.forEach { input -> workout.exercises.add(input.toExercise()) }
@@ -67,7 +67,7 @@ class WorkoutService(private val workoutRepository: WorkoutRepository) {
     fun recordSetResults(
         @NotBlank userName: String,
         workoutId: UUID,
-        @NonRepeated @Valid changes: List<@Valid SetResultChangeInput>,
+        @NonRepeated changes: List<@Valid SetResultChangeInput>,
     ): WorkoutDto {
 
         val workout = findWorkout(userName, workoutId)
@@ -85,8 +85,8 @@ class WorkoutService(private val workoutRepository: WorkoutRepository) {
         workoutId: UUID,
         date: LocalDate?,
         description: String?,
-        @NonRepeated @Valid changeExercises: List<@Valid ChangeExerciseInput>,
-        @Valid addExercises: List<@Valid WorkoutExerciseInput>,
+        @NonRepeated changeExercises: List<@Valid ChangeExerciseInput>,
+        addExercises: List<@Valid WorkoutExerciseInput>,
         removeExerciseIds: List<UUID>,
     ): WorkoutDto {
         val workout = findWorkout(userName, workoutId).apply {
