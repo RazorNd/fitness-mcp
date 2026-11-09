@@ -57,7 +57,7 @@ object WorkoutStubs {
     object RecordSetResults {
         val updatedSet = WorkoutSetDto(1, 8, 22.5, null, 10, null, null, "Hard final reps")
         val clearedSet = WorkoutSetDto(1, 8, 22.5, null, null, null, null, null)
-        val updatedWithUnvalidatedValues = WorkoutSetDto(0, 10, 20.0, null, -2, -1.0, 12, "Hard set")
+        val updatedWithZeroValues = WorkoutSetDto(0, 10, 20.0, null, 0, 0.0, 10, "Skipped")
     }
 
     object EditWorkoutPlan {

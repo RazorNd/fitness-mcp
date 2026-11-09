@@ -18,24 +18,36 @@ package ru.razornd.ai.fitnessmcp.workout
 
 import com.fasterxml.jackson.annotation.JsonClassDescription
 import com.fasterxml.jackson.annotation.JsonPropertyDescription
+import jakarta.validation.Valid
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.Positive
+import jakarta.validation.constraints.PositiveOrZero
 import java.time.LocalDate
 import java.util.UUID
 
 @JsonClassDescription("A workout exercise with its free-form name, optional instructions, and planned sets.")
 data class WorkoutExerciseInput(
     @JsonPropertyDescription("Free-form exercise name. No predefined exercise catalog is required.")
+    @NotBlank
     val name: String,
     @JsonPropertyDescription("Optional instructions or exercise variation.")
     val instructions: String? = null,
     @JsonPropertyDescription("Planned sets in their execution order.")
+    @NotEmpty
+    @Valid
     val sets: List<WorkoutSetInput>,
 )
 
 @JsonClassDescription("A planned set and, when present, its recorded actual result.")
 data class WorkoutSetInput(
     @JsonPropertyDescription("Target repetition count, when applicable.")
+    @Positive
     val targetReps: Int? = null,
     @JsonPropertyDescription("Target external load in kilograms, when applicable.")
+    @PositiveOrZero
     val targetLoadKg: Double? = null,
     @JsonPropertyDescription("Free-form target, for example 'hold for 45 seconds'.")
     val targetDescription: String? = null,
@@ -44,10 +56,13 @@ data class WorkoutSetInput(
 @JsonClassDescription("Replacement target values for one existing set. Null clears that target field.")
 data class SetTargetUpdate(
     @JsonPropertyDescription("Zero-based index of the existing set to update.")
+    @PositiveOrZero
     val setNumber: Int,
     @JsonPropertyDescription("Replacement target repetition count; null clears the target.")
+    @Positive
     val targetReps: Int? = null,
     @JsonPropertyDescription("Replacement target external load in kilograms; null clears the target.")
+    @PositiveOrZero
     val targetLoadKg: Double? = null,
     @JsonPropertyDescription("Replacement free-form target; null clears the target.")
     val targetDescription: String? = null,
@@ -58,10 +73,14 @@ data class ChangeExerciseInput(
     @JsonPropertyDescription("Identifier of the exercise in this workout to change.")
     val exerciseId: UUID,
     @JsonPropertyDescription("Full replacement target values for existing sets. Null target fields clear their current values.")
+    @NonRepeated
+    @Valid
     val setTargets: List<SetTargetUpdate>? = null,
     @JsonPropertyDescription("New sets appended to this exercise, in the order supplied.")
+    @Valid
     val addSets: List<WorkoutSetInput>? = null,
     @JsonPropertyDescription("Zero-based indexes of planned sets to remove. Sets with recorded results cannot be removed.")
+    @NonNegativeIndexes
     val removeSets: List<Int>? = null,
 )
 
@@ -70,12 +89,17 @@ data class SetResultChangeInput(
     @JsonPropertyDescription("Identifier of the exercise containing this set.")
     val exerciseId: UUID,
     @JsonPropertyDescription("Zero-based set index within the exercise.")
+    @PositiveOrZero
     val setNumber: Int,
     @JsonPropertyDescription("Actual repetitions completed. Use 0 to record a skipped set.")
+    @PositiveOrZero
     val actualReps: Int?,
     @JsonPropertyDescription("Actual external load in kilograms, when applicable.")
+    @PositiveOrZero
     val actualLoadKg: Double?,
     @JsonPropertyDescription("User-reported effort rating, for example on a 1–10 scale.")
+    @Min(1)
+    @Max(10)
     val effort: Int?,
     @JsonPropertyDescription("User feedback about execution or wellbeing.")
     val feedback: String?,

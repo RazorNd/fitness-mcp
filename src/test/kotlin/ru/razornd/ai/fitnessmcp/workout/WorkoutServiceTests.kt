@@ -18,6 +18,8 @@ package ru.razornd.ai.fitnessmcp.workout
 
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import jakarta.validation.ConstraintViolationException
+import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -229,19 +231,19 @@ class WorkoutServiceTests {
 
     @Test
     @Sql("classpath:sql/workout/reset-and-seed.sql")
-    fun `record results updates multiple sets without validating supplied values`() {
+    fun `record results accepts zero values and maximum effort rating`() {
         val result = workoutService.recordSetResults(
             WorkoutStubs.USER_NAME,
             WorkoutStubs.WORKOUT_ID,
             listOf(
-                SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, 0, -2, -1.0, 12, "Hard set"),
+                SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, 0, 0, 0.0, 10, "Skipped"),
                 SetResultChangeInput(WorkoutStubs.SECOND_EXERCISE_ID, 0, 0, null, null, "Skipped"),
             ),
         )
 
         assertThat(result.exercises[0].sets[0])
             .usingRecursiveComparison()
-            .isEqualTo(WorkoutStubs.RecordSetResults.updatedWithUnvalidatedValues)
+            .isEqualTo(WorkoutStubs.RecordSetResults.updatedWithZeroValues)
         assertThat(result.exercises[1].sets[0].actualReps).isZero()
     }
 
@@ -306,7 +308,6 @@ class WorkoutServiceTests {
                     addSets = emptyList(),
                     removeSets = emptyList(),
                 ),
-                ChangeExerciseInput(WorkoutStubs.FIRST_EXERCISE_ID),
             ),
             addExercises = emptyList(),
             removeExerciseIds = emptyList(),
@@ -606,5 +607,323 @@ class WorkoutServiceTests {
 
         assertThat(result.exercises.single().sets.map { it.number }).containsExactly(0)
         assertThat(result.exercises.single().sets.single().targetReps).isEqualTo(8)
+    }
+
+    @Nested
+    internal inner class CreateWorkoutValidationTests {
+
+        @Test
+        fun `rejects blank user name`() {
+            assertCreateWorkoutInvalid(
+                userName = " ",
+                exercises = listOf(WorkoutExerciseInput("Squat", sets = listOf(WorkoutSetInput()))),
+                propertyPath = "createWorkout.userName",
+            )
+        }
+
+        @Test
+        fun `rejects empty exercises list`() {
+            assertCreateWorkoutInvalid(
+                exercises = emptyList(),
+                propertyPath = "createWorkout.exercises",
+            )
+        }
+
+        @Test
+        fun `rejects blank exercise name`() {
+            assertCreateWorkoutInvalid(
+                exercises = listOf(WorkoutExerciseInput(" ", sets = listOf(WorkoutSetInput()))),
+                propertyPath = "createWorkout.exercises[0].name",
+            )
+        }
+
+        @Test
+        fun `rejects exercise without sets`() {
+            assertCreateWorkoutInvalid(
+                exercises = listOf(WorkoutExerciseInput("Squat", sets = emptyList())),
+                propertyPath = "createWorkout.exercises[0].sets",
+            )
+        }
+
+        @Test
+        fun `rejects invalid target values in nested set`() {
+            assertCreateWorkoutInvalid(
+                exercises = listOf(WorkoutExerciseInput("Squat", sets = listOf(WorkoutSetInput(-1, -0.1)))),
+                propertyPaths = setOf(
+                    "createWorkout.exercises[0].sets[0].targetReps",
+                    "createWorkout.exercises[0].sets[0].targetLoadKg",
+                ),
+            )
+        }
+
+        @Test
+        fun `rejects exercise with zero targets reps in set`() {
+            assertCreateWorkoutInvalid(
+                exercises = listOf(WorkoutExerciseInput("Squat", sets = listOf(WorkoutSetInput(0, 20.0)))),
+                propertyPaths = setOf("createWorkout.exercises[0].sets[0].targetReps"),
+            )
+        }
+
+        private fun assertCreateWorkoutInvalid(
+            userName: String = WorkoutStubs.USER_NAME,
+            exercises: List<WorkoutExerciseInput>,
+            propertyPath: String? = null,
+            propertyPaths: Set<String> = emptySet(),
+        ) {
+            assertThatThrownBy {
+                workoutService.createWorkout(userName, null, null, exercises)
+            }
+                .isInstanceOfSatisfying(ConstraintViolationException::class.java) { exception ->
+                    val paths = exception.constraintViolations.map { it.propertyPath.toString() }.toSet()
+                    propertyPath?.let { assertThat(paths).contains(it) }
+                    if (propertyPaths.isNotEmpty()) assertThat(paths).containsAll(propertyPaths)
+                }
+        }
+    }
+
+    @Nested
+    internal inner class GetWorkoutValidationTests {
+
+        @Test
+        fun `rejects blank user name`() {
+            assertThatThrownBy {
+                workoutService.getWorkout(" ", WorkoutStubs.WORKOUT_ID)
+            }
+                .isInstanceOfSatisfying(ConstraintViolationException::class.java) { exception ->
+                    assertThat(exception.constraintViolations.map { it.propertyPath.toString() })
+                        .contains("getWorkout.userName")
+                }
+        }
+    }
+
+    @Nested
+    internal inner class GetWorkoutHistoryValidationTests {
+
+        @Test
+        fun `rejects blank user name`() {
+            assertThatThrownBy {
+                workoutService.getWorkoutHistory(" ", null)
+            }
+                .isInstanceOfSatisfying(ConstraintViolationException::class.java) { exception ->
+                    assertThat(exception.constraintViolations.map { it.propertyPath.toString() })
+                        .contains("getWorkoutHistory.userName")
+                }
+        }
+
+        @Test
+        fun `rejects limit below one`() {
+            assertInvalidLimit(0)
+        }
+
+        @Test
+        fun `rejects limit above maximum`() {
+            assertInvalidLimit(101)
+        }
+
+        private fun assertInvalidLimit(limit: Int) {
+            assertThatThrownBy {
+                workoutService.getWorkoutHistory(WorkoutStubs.USER_NAME, limit)
+            }
+                .isInstanceOfSatisfying(ConstraintViolationException::class.java) { exception ->
+                    assertThat(exception.constraintViolations.map { it.propertyPath.toString() })
+                        .contains("getWorkoutHistory.limit")
+                }
+        }
+    }
+
+    @Nested
+    internal inner class RecordSetResultsValidationTests {
+
+        @Test
+        fun `rejects blank user name`() {
+            assertInvalidRecordChange(
+                userName = " ",
+                setResultChange = SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, 0, 5, null, null, null),
+                propertyPath = "recordSetResults.userName",
+            )
+        }
+
+        @Test
+        fun `rejects negative set number`() {
+            assertInvalidRecordChange(
+                setResultChange = SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, -1, 5, null, null, null),
+                propertyPath = "recordSetResults.changes[0].setNumber",
+            )
+        }
+
+        @Test
+        fun `rejects negative actual repetitions`() {
+            assertInvalidRecordChange(
+                setResultChange = SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, 0, -1, null, null, null),
+                propertyPath = "recordSetResults.changes[0].actualReps",
+            )
+        }
+
+        @Test
+        fun `rejects negative actual load`() {
+            assertInvalidRecordChange(
+                setResultChange = SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, 0, null, -0.1, null, null),
+                propertyPath = "recordSetResults.changes[0].actualLoadKg",
+            )
+        }
+
+        @Test
+        fun `rejects effort outside one through ten`() {
+            assertInvalidRecordChange(
+                setResultChange = SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, 0, null, null, 0, null),
+                propertyPath = "recordSetResults.changes[0].effort",
+            )
+            assertInvalidRecordChange(
+                setResultChange = SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, 0, null, null, 11, null),
+                propertyPath = "recordSetResults.changes[0].effort",
+            )
+        }
+
+        @Test
+        fun `rejects repeated exercise and set pair`() {
+            val changes = listOf(
+                SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, 0, 5, null, null, null),
+                SetResultChangeInput(WorkoutStubs.FIRST_EXERCISE_ID, 0, 6, null, null, null),
+            )
+
+            assertThatThrownBy {
+                workoutService.recordSetResults(WorkoutStubs.USER_NAME, WorkoutStubs.WORKOUT_ID, changes)
+            }
+                .isInstanceOfSatisfying(ConstraintViolationException::class.java) { exception ->
+                    assertThat(exception.constraintViolations.map { it.propertyPath.toString() })
+                        .contains("recordSetResults.changes")
+                }
+        }
+
+        private fun assertInvalidRecordChange(
+            userName: String = WorkoutStubs.USER_NAME,
+            setResultChange: SetResultChangeInput,
+            propertyPath: String,
+        ) {
+            assertThatThrownBy {
+                workoutService.recordSetResults(userName, WorkoutStubs.WORKOUT_ID, listOf(setResultChange))
+            }
+                .isInstanceOfSatisfying(ConstraintViolationException::class.java) { exception ->
+                    assertThat(exception.constraintViolations.map { it.propertyPath.toString() })
+                        .contains(propertyPath)
+                }
+        }
+    }
+
+    @Nested
+    internal inner class EditWorkoutPlanValidationTests {
+
+        @Test
+        fun `rejects blank user name`() {
+            assertInvalidEdit(
+                userName = " ",
+                propertyPath = "editWorkoutPlan.userName",
+            )
+        }
+
+        @Test
+        fun `rejects negative target set number`() {
+            assertInvalidEdit(
+                changeExercises = listOf(ChangeExerciseInput(
+                    WorkoutStubs.FIRST_EXERCISE_ID,
+                    setTargets = listOf(SetTargetUpdate(-1)),
+                )),
+                propertyPath = "editWorkoutPlan.changeExercises[0].setTargets[0].setNumber",
+            )
+        }
+
+        @Test
+        fun `rejects invalid target values`() {
+            assertInvalidEdit(
+                changeExercises = listOf(ChangeExerciseInput(
+                    WorkoutStubs.FIRST_EXERCISE_ID,
+                    setTargets = listOf(SetTargetUpdate(0, targetReps = 0, targetLoadKg = -1.0)),
+                )),
+                propertyPaths = setOf(
+                    "editWorkoutPlan.changeExercises[0].setTargets[0].targetReps",
+                    "editWorkoutPlan.changeExercises[0].setTargets[0].targetLoadKg",
+                ),
+            )
+        }
+
+        @Test
+        fun `rejects negative set removal index`() {
+            assertInvalidEdit(
+                changeExercises = listOf(ChangeExerciseInput(
+                    WorkoutStubs.FIRST_EXERCISE_ID,
+                    removeSets = listOf(-1),
+                )),
+                propertyPath = "editWorkoutPlan.changeExercises[0].removeSets",
+            )
+        }
+
+        @Test
+        fun `validates exercises and sets added to plan`() {
+            assertInvalidEdit(
+                addExercises = listOf(WorkoutExerciseInput(" ", sets = listOf(WorkoutSetInput(targetReps = 0)))),
+                propertyPaths = setOf(
+                    "editWorkoutPlan.addExercises[0].name",
+                    "editWorkoutPlan.addExercises[0].sets[0].targetReps",
+                ),
+            )
+        }
+
+        @Test
+        fun `rejects added exercise without sets`() {
+            assertInvalidEdit(
+                addExercises = listOf(WorkoutExerciseInput("Squat", sets = emptyList())),
+                propertyPath = "editWorkoutPlan.addExercises[0].sets",
+            )
+        }
+
+        @Test
+        fun `rejects repeated exercise changes`() {
+            assertInvalidEdit(
+                changeExercises = listOf(
+                    ChangeExerciseInput(WorkoutStubs.FIRST_EXERCISE_ID),
+                    ChangeExerciseInput(WorkoutStubs.FIRST_EXERCISE_ID),
+                ),
+                propertyPath = "editWorkoutPlan.changeExercises",
+            )
+        }
+
+        @Test
+        fun `rejects repeated target set numbers`() {
+            assertInvalidEdit(
+                changeExercises = listOf(
+                    ChangeExerciseInput(
+                        WorkoutStubs.FIRST_EXERCISE_ID,
+                        setTargets = listOf(SetTargetUpdate(0), SetTargetUpdate(0)),
+                    ),
+                ),
+                propertyPath = "editWorkoutPlan.changeExercises[0].setTargets",
+            )
+        }
+
+        private fun assertInvalidEdit(
+            userName: String = WorkoutStubs.USER_NAME,
+            changeExercises: List<ChangeExerciseInput> = emptyList(),
+            addExercises: List<WorkoutExerciseInput> = emptyList(),
+            removeExerciseIds: List<UUID> = emptyList(),
+            propertyPath: String? = null,
+            propertyPaths: Set<String> = emptySet(),
+        ) {
+            assertThatThrownBy {
+                workoutService.editWorkoutPlan(
+                    userName,
+                    WorkoutStubs.WORKOUT_ID,
+                    null,
+                    null,
+                    changeExercises,
+                    addExercises,
+                    removeExerciseIds,
+                )
+            }
+                .isInstanceOfSatisfying(ConstraintViolationException::class.java) { exception ->
+                    val paths = exception.constraintViolations.map { it.propertyPath.toString() }.toSet()
+                    propertyPath?.let { assertThat(paths).contains(it) }
+                    if (propertyPaths.isNotEmpty()) assertThat(paths).containsAll(propertyPaths)
+                }
+        }
     }
 }

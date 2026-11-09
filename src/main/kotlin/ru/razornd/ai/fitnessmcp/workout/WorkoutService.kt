@@ -16,21 +16,28 @@
 
 package ru.razornd.ai.fitnessmcp.workout
 
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
+import jakarta.validation.constraints.NotBlank
+import jakarta.validation.constraints.NotEmpty
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.validation.annotation.Validated
 import java.time.LocalDate
 import java.util.*
 
 @Service
+@Validated
 class WorkoutService(private val workoutRepository: WorkoutRepository) {
 
     @Transactional
     fun createWorkout(
-        userName: String,
+        @NotBlank userName: String,
         date: LocalDate?,
         description: String?,
-        exercises: List<WorkoutExerciseInput>,
+        @NotEmpty @Valid exercises: List<@Valid WorkoutExerciseInput>,
     ): WorkoutDto {
         val workout = Workout(userName = userName, date = date ?: LocalDate.now(), description = description)
         exercises.forEach { input -> workout.exercises.add(input.toExercise()) }
@@ -38,10 +45,16 @@ class WorkoutService(private val workoutRepository: WorkoutRepository) {
     }
 
     @Transactional(readOnly = true)
-    fun getWorkout(userName: String, workoutId: UUID): WorkoutDto = findWorkout(userName, workoutId).toDto()
+    fun getWorkout(
+        @NotBlank userName: String,
+        workoutId: UUID,
+    ): WorkoutDto = findWorkout(userName, workoutId).toDto()
 
     @Transactional(readOnly = true)
-    fun getWorkoutHistory(userName: String, limit: Int?): WorkoutHistoryDto {
+    fun getWorkoutHistory(
+        @NotBlank userName: String,
+        @Min(1) @Max(MAX_HISTORY_LIMIT.toLong()) limit: Int?,
+    ): WorkoutHistoryDto {
         val boundedLimit = (limit ?: MAX_HISTORY_LIMIT).coerceIn(1, MAX_HISTORY_LIMIT)
         val workouts = workoutRepository.findAllByUserNameOrderByDateDescCreatedAtDesc(
             userName = userName,
@@ -52,9 +65,9 @@ class WorkoutService(private val workoutRepository: WorkoutRepository) {
 
     @Transactional
     fun recordSetResults(
-        userName: String,
+        @NotBlank userName: String,
         workoutId: UUID,
-        changes: List<SetResultChangeInput>,
+        @NonRepeated @Valid changes: List<@Valid SetResultChangeInput>,
     ): WorkoutDto {
 
         val workout = findWorkout(userName, workoutId)
@@ -68,12 +81,12 @@ class WorkoutService(private val workoutRepository: WorkoutRepository) {
 
     @Transactional
     fun editWorkoutPlan(
-        userName: String,
+        @NotBlank userName: String,
         workoutId: UUID,
         date: LocalDate?,
         description: String?,
-        changeExercises: List<ChangeExerciseInput>,
-        addExercises: List<WorkoutExerciseInput>,
+        @NonRepeated @Valid changeExercises: List<@Valid ChangeExerciseInput>,
+        @Valid addExercises: List<@Valid WorkoutExerciseInput>,
         removeExerciseIds: List<UUID>,
     ): WorkoutDto {
         val workout = findWorkout(userName, workoutId).apply {
@@ -104,7 +117,8 @@ class WorkoutService(private val workoutRepository: WorkoutRepository) {
     private fun WorkoutExerciseInput.toExercise() = WorkoutExercise(
         name = name,
         instructions = instructions,
-    ).also { exercise -> sets.forEach { exercise.sets.add(it.toSet()) } }
+        sets = sets.mapTo(ArrayList()) { it.toSet() }
+    )
 
     private fun WorkoutSetInput.toSet() = WorkoutSet(
         targetReps = targetReps,
