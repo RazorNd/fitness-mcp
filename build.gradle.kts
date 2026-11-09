@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "ru.razornd.ai"
-version = "0.0.1-SNAPSHOT"
+version = "0.1.0-SNAPSHOT"
 description = "fitness-mcp"
 
 java {
@@ -91,4 +91,8 @@ tasks.bootBuildImage {
             ).map { tag -> "${it.substringBefore(":")}:$tag" }
         }
     }
+}
+
+tasks.processResources {
+    expand("version" to version)
 }
