@@ -16,12 +16,12 @@
 
 package ru.razornd.ai.fitnessmcp
 
-import org.springframework.ai.mcp.annotation.context.McpSyncRequestContext
+import io.modelcontextprotocol.common.McpTransportContext
 
 const val USER_NAME_CONTEXT_KEY = "user_name"
 
-val McpSyncRequestContext.userName: String
-    get() = checkNotNull(transportContext().get(USER_NAME_CONTEXT_KEY) as? String) {
+val McpTransportContext.userName: String
+    get() = checkNotNull(this[USER_NAME_CONTEXT_KEY] as? String) {
         "The MCP request context does not contain '$USER_NAME_CONTEXT_KEY'. " +
                 "Authenticated user names are added by ServerTransportConfiguration for every request. " +
                 "Verify that the stateless MCP transport uses the configured context extractor and that " +

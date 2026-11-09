@@ -16,14 +16,14 @@
 
 package ru.razornd.ai.fitnessmcp.workout
 
+import io.modelcontextprotocol.common.McpTransportContext
 import org.springframework.ai.mcp.annotation.McpTool
 import org.springframework.ai.mcp.annotation.McpTool.McpAnnotations
 import org.springframework.ai.mcp.annotation.McpToolParam
-import org.springframework.ai.mcp.annotation.context.McpSyncRequestContext
 import org.springframework.stereotype.Component
 import ru.razornd.ai.fitnessmcp.userName
 import java.time.LocalDate
-import java.util.UUID
+import java.util.*
 
 @Component
 @Suppress("unused")
@@ -51,7 +51,7 @@ class WorkoutTools(
         description: String?,
         @McpToolParam(description = "Exercises in planned execution order. Each exercise needs a free-form name and at least one planned set.")
         exercises: List<WorkoutExerciseInput>,
-        context: McpSyncRequestContext,
+        context: McpTransportContext,
     ): WorkoutDto = workoutService.createWorkout(context.userName, date, description, exercises)
 
     @McpTool(
@@ -64,7 +64,7 @@ class WorkoutTools(
     fun getWorkout(
         @McpToolParam(description = "Identifier of the workout to retrieve.")
         workoutId: UUID,
-        context: McpSyncRequestContext,
+        context: McpTransportContext,
     ): WorkoutDto = workoutService.getWorkout(context.userName, workoutId)
 
     @McpTool(
@@ -80,7 +80,7 @@ class WorkoutTools(
             required = false
         )
         limit: Int?,
-        context: McpSyncRequestContext,
+        context: McpTransportContext,
     ): WorkoutHistoryDto = workoutService.getWorkoutHistory(context.userName, limit)
 
     @McpTool(
@@ -95,7 +95,7 @@ class WorkoutTools(
         workoutId: UUID,
         @McpToolParam(description = "Set result changes. Each change identifies an exercise and zero-based set index and supplies the actual result fields.")
         changes: List<SetResultChangeInput>,
-        context: McpSyncRequestContext,
+        context: McpTransportContext,
     ): WorkoutDto = workoutService.recordSetResults(
         context.userName,
         workoutId,
@@ -137,7 +137,7 @@ class WorkoutTools(
             required = false
         )
         removeExerciseIds: List<UUID>?,
-        context: McpSyncRequestContext,
+        context: McpTransportContext,
     ): WorkoutDto = workoutService.editWorkoutPlan(
         context.userName,
         workoutId,
