@@ -93,7 +93,3 @@ tasks.bootBuildImage {
         }
     }
 }
-
-tasks.processResources {
-    expand("version" to version)
-}
