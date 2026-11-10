@@ -59,12 +59,13 @@ Use the `FITNESS_*` names shown below for environment-based configuration. The s
 | `fitness.datasource.url` | `FITNESS_DATASOURCE_URL` | Yes | — |
 | `fitness.datasource.username` | `FITNESS_DATASOURCE_USERNAME` | Yes | — |
 | `fitness.datasource.password` | `FITNESS_DATASOURCE_PASSWORD` | Yes | — |
+| `fitness.mcp.endpoint` | `FITNESS_MCP_ENDPOINT` | No | `/mcp` |
 | `fitness.jwt.issuer-uri` | `FITNESS_JWT_ISSUER_URI` | No | `https://auth.razornd.ru` |
 | `fitness.server.port` | `FITNESS_SERVER_PORT` | No | `8080` |
 | `fitness.server.forward-headers-strategy` | `FITNESS_SERVER_FORWARD_HEADERS_STRATEGY` | No | `framework` |
 | `instance.id` | `INSTANCE_ID` | No | `unknown` |
 
-The JWT issuer must match the `iss` claim in access tokens, and its discovery metadata must be reachable by the application. MCP requests must include a valid bearer token. The MCP endpoint is `/mcp`.
+The JWT issuer must match the `iss` claim in access tokens, and its discovery metadata must be reachable by the application. MCP requests must include a valid bearer token. The MCP endpoint defaults to `/mcp` and can be changed with `fitness.mcp.endpoint`.
 
 ### Environment variables
 
@@ -92,6 +93,8 @@ fitness:
     url: jdbc:postgresql://db:5432/fitness-mcp
     username: fitness_mcp
     password: change-me
+  mcp:
+    endpoint: /mcp
   jwt:
     issuer-uri: https://auth.example.com
   server:
@@ -112,6 +115,7 @@ java -jar fitness-mcp.jar \
   --fitness.datasource.url='jdbc:postgresql://db:5432/fitness-mcp' \
   --fitness.datasource.username='fitness_mcp' \
   --fitness.datasource.password='change-me' \
+  --fitness.mcp.endpoint='/mcp' \
   --fitness.jwt.issuer-uri='https://auth.example.com'
 ```
 
