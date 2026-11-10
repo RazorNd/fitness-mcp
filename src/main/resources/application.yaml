@@ -1,6 +1,12 @@
 spring:
+  config:
+    import: optional:configtree:/run/secrets/
   application:
     name: fitness-mcp
+  datasource:
+    url: ${fitness.datasource.url}
+    username: ${fitness.datasource.username}
+    password: ${fitness.datasource.password}
   ai:
     mcp:
       server:
@@ -15,17 +21,21 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: https://auth.razornd.ru
+          issuer-uri: ${fitness.jwt.issuer-uri:https://auth.razornd.ru}
+
+server:
+  port: ${fitness.server.port:8080}
+  forward-headers-strategy: ${fitness.server.forward-headers-strategy:framework}
 
 logging:
   structured:
     json.add:
       'service.name': ${spring.application.name}
       'service.version': ${spring.application.version}
-      'service.instance.id': ${INSTANCE_ID:unknown}
+      'service.instance.id': ${instance.id:unknown}
 
 management:
   opentelemetry:
     resource-attributes:
       'service.version': ${spring.application.version}
-      'service.instance.id': ${INSTANCE_ID:unknown}
+      'service.instance.id': ${instance.id:unknown}

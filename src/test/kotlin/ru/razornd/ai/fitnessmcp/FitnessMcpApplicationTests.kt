@@ -39,7 +39,7 @@ import java.util.*
 @SpringBootTest(
     webEnvironment = RANDOM_PORT,
     properties = [
-        $$"spring.security.oauth2.resourceserver.jwt.issuer-uri=${wiremock.server.baseUrl}/issuer"
+        $$"fitness.jwt.issuer-uri=${wiremock.server.baseUrl}/issuer"
     ]
 )
 @EnableWireMock(ConfigureWireMock(filesUnderClasspath = "wiremock"))
