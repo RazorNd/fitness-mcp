@@ -17,6 +17,8 @@ spring:
           completion: false
           resource: false
           prompt: false
+        streamable-http:
+          mcp-endpoint: ${fitness.mcp.endpoint:/mcp}
   security:
     oauth2:
       resourceserver:
