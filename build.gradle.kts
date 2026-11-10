@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "ru.razornd.ai"
-version = "0.1.0-SNAPSHOT"
+version = "0.1.0"
 description = "fitness-mcp"
 
 java {

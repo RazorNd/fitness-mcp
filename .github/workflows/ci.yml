@@ -150,6 +150,6 @@ jobs:
           git tag "$tag" "$GITHUB_SHA"
           git push origin "$tag"
           gh release create "$tag" \
-            --title "$tag" \
+            --title "🎉 Fitness MCP $VERSION" \
             --generate-notes \
-            --notes "Container image: ghcr.io/${GITHUB_REPOSITORY}:$VERSION"
+            --notes "🎉 The first stable release of Fitness MCP is here! Thanks for trying it out! Container image: ghcr.io/${GITHUB_REPOSITORY}:$VERSION"
